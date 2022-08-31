@@ -1,0 +1,24 @@
+{
+  "name": "lesson_homework_six",
+  "version": "1.0.0",
+  "description": "A demo for polkadot_ts",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --loader ts-node/esm  ./src/main.ts",
+    "build": "tsc --build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.23",
+    "ts-node": "^10.7.0",
+    "tslint": "^6.1.3",
+    "typescript": "^4.6.3"
+  },
+  "dependencies": {
+    "@polkadot/api": "^7.8.1",
+    "@polkadot/api-augment": "^7.15.1",
+    "@polkadot/api-contract": "^7.15.1",
+    "@polkadot/keyring": "^8.7.1"
+  }
+}
