@@ -1,5 +1,5 @@
 # lesson_homework_one（基于 polkadot-v0.9.25）
-
+第一课的代码是在[lesson_homework_one](./pallets/poe)   
 实现功能：
 
     * 创建存证的测试用例
@@ -10,6 +10,33 @@
 问题: 
 
     mock的AccountId不知道怎么写，虽然偶然试出来了，但是不知道原理
+
+
+# lesson_homework_two（基于 polkadot-v0.9.25）
+第二课的代码是在[lesson_homework_two](./pallets/kitties)    
+实现功能:
+  
+    1. 创建Kitty，孵化Kitty，转移Kitty。
+    2. KittyIndex不在pallet中指定，而是在runtime里面绑定
+    3. 扩展存储，能得到一个账号拥有的所有kitties
+    4. create和breed需要质押一定数量的token，在transfer的时候能转移质押。
+    5. 通过polkadot js可以成功调用pallet里面的功能
+
+![kitty_create_0](./images/lesson_homework_two/kitty_create_0.png)
+![kitty_create_1](./images/lesson_homework_two/kitty_create_1.png)
+![kitty_breed](./images/lesson_homework_two/kitty_breed.png)
+![kitty_transfer](./images/lesson_homework_two/kitty_transfer.png)
+![owner_kitties](./images/lesson_homework_two/owner_kitties.png)
+
+
+
+
+
+
+
+
+
+
 
 # Substrate Node Template
 

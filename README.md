@@ -29,3 +29,12 @@
     1. 创建存证的测试用例
     2.撤销存证的测试用例
     3.转移存证的测试用例
+
+[lesson_homework_two](./Advanced/lesson_homework_one) 作业二   
+实现功能:
+
+    1. 创建Kitty，孵化Kitty，转移Kitty。
+    2. KittyIndex不在pallet中指定，而是在runtime里面绑定
+    3. 扩展存储，能得到一个账号拥有的所有kitties
+    4. create和breed需要质押一定数量的token，在transfer的时候能转移质押。
+    5. 通过polkadot js可以成功调用pallet里面的功能

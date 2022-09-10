@@ -14,7 +14,6 @@ pub mod pallet {
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_std::vec::Vec;
-	//use crate::pallet;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	/// 模块配置接口

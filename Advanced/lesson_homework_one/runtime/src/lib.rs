@@ -46,6 +46,12 @@ pub use sp_runtime::{Perbill, Permill};
 /// Import the template pallet.
 pub use pallet_template;
 
+/// 导入poe模块
+pub use pallet_poe;
+
+/// 导入kitties模块
+pub use pallet_kitties;
+
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -273,6 +279,19 @@ impl pallet_poe::Config for Runtime {
 	type Event = Event;
 }
 
+impl pallet_kitties::Config for Runtime {
+	type Event = Event;
+	/// 自定义一个随机数变量
+	type Randomness = RandomnessCollectiveFlip;
+	/// 定义Kitty的索引ID类型
+	type KittyIndex = u32;
+	/// 引入钱包类型
+	type Currency = Balances;
+	type MaxKittyIndex = ConstU32<512>;
+	type KittyPrice = ConstU128<512>;
+
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime where
@@ -291,6 +310,7 @@ construct_runtime!(
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
 		PoeModule: pallet_poe,
+		KittiesModule: pallet_kitties,
 	}
 );
 
