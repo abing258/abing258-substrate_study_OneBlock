@@ -29,8 +29,12 @@
 ![owner_kitties](./images/lesson_homework_two/owner_kitties.png)
 
 
+# lesson_homework_three（基于 polkadot-v0.9.25）
+第三课的代码是在[lesson_homework_three](./pallets/kitties)    
+实现功能:
 
-
+    单元测试
+![](./images/lesson_homework_three/img.png)
 
 
 

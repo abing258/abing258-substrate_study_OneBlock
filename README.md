@@ -38,3 +38,10 @@
     3. 扩展存储，能得到一个账号拥有的所有kitties
     4. create和breed需要质押一定数量的token，在transfer的时候能转移质押。
     5. 通过polkadot js可以成功调用pallet里面的功能
+
+[lesson_homework_three_back](./Advanced/lesson_homework_one/pallets/kitties) 作业三   
+[lesson_homework_three_front](./Advanced/lesson_homework_three) 作业三   
+实现功能:
+
+    1. Kitty的单元测试。
+    2. 前端页面的交互

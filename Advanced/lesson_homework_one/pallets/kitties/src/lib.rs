@@ -97,7 +97,6 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		NotEnoughBalance,
-		InvalidKittyId,
 		KittyIdOverflow,
 		OwnTooManyKitties,
 		SameKittyId,
@@ -114,6 +113,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// 创建kitty
 		#[pallet::weight(10_000)]
+		#[frame_support::transactional]
 		pub fn create(origin: OriginFor<T>) -> DispatchResult {
 			// 校验是否是一个签名的交易并获取sender
 			let sender = ensure_signed(origin)?;
@@ -121,7 +121,7 @@ pub mod pallet {
 			let kitty_price = T::KittyPrice::get();
 			ensure!(T::Currency::can_reserve(&sender, kitty_price), Error::<T>::NotEnoughBalance);
 
-			let kitty_id = Self::get_next_id().map_err(|_| Error::<T>::InvalidKittyId)?;
+			let kitty_id = Self::get_next_id().map_err(|_| Error::<T>::KittyIdOverflow)?;
 			let random = Self::random_value(&sender);
 			let kitty = Kitty(random);
 
@@ -135,7 +135,7 @@ pub mod pallet {
 				.unwrap();
 			NextKittyId::<T>::set(next_kitty_id);
 
-			OwnerKitties::<T>::try_mutate(&sender, |ref mut kitties| {
+			OwnerKitties::<T>::try_mutate(&sender, | ref mut kitties| {
 				kitties.try_push(kitty_id).map_err(|_| Error::<T>::OwnTooManyKitties)?;
 				Ok::<(), DispatchError>(())
 			})?;
@@ -147,6 +147,7 @@ pub mod pallet {
 
 		/// 孵化kitty
 		#[pallet::weight(10_000)]
+		#[frame_support::transactional]
 		pub fn breed(origin: OriginFor<T>, kitty_id_one: T::KittyIndex, kitty_id_two: T::KittyIndex) -> DispatchResult {
 			// 校验是否是一个签名的交易并获取sender
 			let sender = ensure_signed(origin)?;
@@ -157,7 +158,7 @@ pub mod pallet {
 			let kitty_one = Self::get_kitty(kitty_id_one).map_err(|_| Error::<T>::NotExistKittyId)?;
 			let kitty_two = Self::get_kitty(kitty_id_two).map_err(|_| Error::<T>::NotExistKittyId)?;
 
-			let kitty_id = Self::get_next_id().map_err(|_| Error::<T>::InvalidKittyId)?;
+			let kitty_id = Self::get_next_id().map_err(|_| Error::<T>::KittyIdOverflow)?;
 			let random = Self::random_value(&sender);
 
 			let mut kitty_data = [0u8; 16];
@@ -177,11 +178,11 @@ pub mod pallet {
 				.unwrap();
 			NextKittyId::<T>::set(next_kitty_id);
 
-			OwnerKitties::<T>::try_mutate(&sender, |ref mut kitties| {
-				let index = kitties.iter().position(|&r| r == kitty_id).unwrap();
-				kitties.remove(index);
-				Ok::<(), DispatchError>(())
-			})?;
+			// OwnerKitties::<T>::try_mutate(&sender, |ref mut kitties| {
+			// 	let index = kitties.iter().position(|&r| r == kitty_id).unwrap();
+			// 	kitties.remove(index);
+			// 	Ok::<(), DispatchError>(())
+			// })?;
 
 			OwnerKitties::<T>::try_mutate(&sender, |ref mut kitties| {
 				kitties.try_push(kitty_id).map_err(|_| Error::<T>::OwnTooManyKitties)?;
@@ -195,6 +196,7 @@ pub mod pallet {
 
 		/// 转移kitty
 		#[pallet::weight(10_000)]
+		#[frame_support::transactional]
 		pub fn transfer(origin: OriginFor<T>, kitty_id: T::KittyIndex, new_owner: T::AccountId) -> DispatchResult {
 			// 校验是否是一个签名的交易并获取sender
 			let sender = ensure_signed(origin)?;

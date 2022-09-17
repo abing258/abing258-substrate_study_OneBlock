@@ -1,9 +1,8 @@
 use crate as pallet_kitties;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
+	traits::{ConstU16, ConstU32, ConstU64},
 };
-use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -77,14 +76,14 @@ impl pallet_kitties::Config for Test {
 	type Randomness = RandomnessCollectiveFlip;
 	type Currency = Balances;
 	type KittyIndex = u32;
-	type MaxKittyIndex = ConstU32<512>;
+	type MaxKittyIndex = ConstU32<3>;
 	type KittyPrice = KittyPrice;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	pallet_balances::GenesisConfig::<Test> { balances: vec![(0, 100), (1, 98), (2, 1)] }
+	pallet_balances::GenesisConfig::<Test> { balances: vec![(0, 100), (1, 25), (2, 1)] }
 		.assimilate_storage(&mut t)
 		.unwrap();
 	t.into()
