@@ -2,6 +2,7 @@
 
 /// 方便让别的模块调用
 pub use pallet::*;
+use sp_core::crypto::KeyTypeId;
 
 /// 必须引入以下两个宏，才能对kitties模块进行单元测试
 #[cfg(test)]
@@ -10,13 +11,49 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"kty!");
+
+pub mod crypto {
+	use super::KEY_TYPE;
+	use sr25519::Signature as Sr25519Signature;
+	use sp_runtime::{
+		app_crypto::{app_crypto, sr25519},
+		traits::Verify,
+		MultiSignature, MultiSigner,
+	};
+	app_crypto!(sr25519, KEY_TYPE);
+
+	pub struct KittiesAuthId;
+
+	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for KittiesAuthId {
+		type RuntimeAppPublic = Public;
+		type GenericPublic = sr25519::Public;
+		type GenericSignature = sr25519::Signature;
+	}
+
+	impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature>
+	for KittiesAuthId
+	{
+		type RuntimeAppPublic = Public;
+		type GenericPublic = sr25519::Public;
+		type GenericSignature = sr25519::Signature;
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
+	use frame_support::inherent::Vec;
 	use frame_support::traits::{Randomness, ReservableCurrency};
-	use frame_support::{pallet_prelude::*, traits::Currency};
+	use frame_support::{log, pallet_prelude::*, traits::Currency};
+	use frame_system::offchain::SendSignedTransaction;
+	use frame_system::offchain::{AppCrypto, CreateSignedTransaction, Signer};
 	use frame_system::pallet_prelude::*;
+	use sp_io::offchain_index;
+	use sp_runtime::offchain::storage::StorageValueRef;
+	use sp_runtime::traits::Zero;
 	use sp_runtime::traits::{AtLeast32Bit, Bounded, CheckedAdd};
-	use sp_io::hashing::blake2_128;
+	use sp_runtime::transaction_validity::InvalidTransaction::{Call as OtherCall, Call};
 
 
 	#[pallet::type_value]
@@ -25,7 +62,10 @@ pub mod pallet {
 	}
 
 	#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, MaxEncodedLen)]
-	pub struct Kitty(pub [u8; 16]);
+	pub struct Kitty {
+		pub dna: [u8; 16],
+		pub algebra: u32,
+	}
 
 	/// 定义账号余额
 	/// 参考：substrate/frame/nicks/src/lib.rs中的定义
@@ -34,7 +74,7 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	/// 模块配置接口
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Randomness: Randomness<Self::Hash, Self::BlockNumber>;
 		// 定义KittyIndex类型，要求实现执行的trait
@@ -58,7 +98,10 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type MaxKittyIndex: Get<u32>;
+
+		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
+
 
 	#[pallet::pallet]
 	//定义自己所需的存储项所需的宏
@@ -102,11 +145,35 @@ pub mod pallet {
 		SameKittyId,
 		NotExistKittyId,
 		NotOwner,
+		InvalidKittyId,
 	}
+
+	const ONCHAIN_TX_KEY: &[u8] = b"kitty_pallet::indexing01";
+	#[derive(Debug, Encode, Decode, Default)]
+	struct IndexingData<T: Config>(T::KittyIndex);
 
 	#[pallet::hooks]
 	//定义保留函数
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn offchain_worker(block_number: T::BlockNumber) {
+			let key = Self::derived_key(block_number);
+			let storage_ref = StorageValueRef::persistent(&key);
+
+			if let Ok(Some(data)) = storage_ref.get::<IndexingData<T>>() {
+				// Sleep 8000ms to simulate heavy calculation for kitty asset index.
+				let timeout = sp_io::offchain::timestamp()
+					.add(sp_runtime::offchain::Duration::from_millis(8000));
+				sp_io::offchain::sleep_until(timeout);
+
+				let kitty_id = data.0.into();
+
+				if block_number % 2u32.into() != Zero::zero() {
+					let _ = Self::send_signed_tx(kitty_id, 1);
+				} else {
+					let _ = Self::send_signed_tx(kitty_id, 2);
+				}
+			}
+		}
 	}
 
 	#[pallet::call]
@@ -123,7 +190,7 @@ pub mod pallet {
 
 			let kitty_id = Self::get_next_id().map_err(|_| Error::<T>::KittyIdOverflow)?;
 			let random = Self::random_value(&sender);
-			let kitty = Kitty(random);
+			let kitty = Kitty{ dna: random, algebra: 01 };
 
 			T::Currency::reserve(&sender, kitty_price)?;
 
@@ -162,11 +229,11 @@ pub mod pallet {
 			let random = Self::random_value(&sender);
 
 			let mut kitty_data = [0u8; 16];
-			for i in 0..kitty_one.0.len() {
-				kitty_data[i] = (kitty_one.0[i] & random[i]) | (kitty_two.0[i] & !random[i]);
+			for i in 0..kitty_one.dna.len() {
+				kitty_data[i] = (kitty_one.dna[i] & random[i]) | (kitty_two.dna[i] & !random[i]);
 			}
 
-			let kitty = Kitty(kitty_data);
+			let kitty = Kitty{ dna: kitty_data, algebra: 01 };
 
 			T::Currency::reserve(&sender, kitty_price)?;
 
@@ -219,6 +286,23 @@ pub mod pallet {
 			Self::deposit_event(Event::KittyTransfer(sender, kitty_id, new_owner));
 			Ok({})
 		}
+
+		#[pallet::weight(0)]
+		pub fn update_kitty(
+			origin: OriginFor<T>,
+			kitty_id: T::KittyIndex,
+			algebra: u32,
+		) -> DispatchResultWithPostInfo {
+			let _who = ensure_signed(origin)?;
+
+			let kitty = Self::get_kitty(kitty_id).map_err(|_| Error::<T>::InvalidKittyId)?;
+
+			let new_kitty = Kitty { dna: kitty.dna, algebra };
+
+			Kitties::<T>::insert(kitty_id, &new_kitty);
+
+			Ok(().into())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -229,7 +313,7 @@ pub mod pallet {
 				&sender,
 				<frame_system::Pallet::<T>>::extrinsic_index(),
 				);
-			payload.using_encoded(blake2_128)
+			payload.using_encoded(sp_io::hashing::blake2_128)
 		}
 
 		/// get next id
@@ -248,6 +332,48 @@ pub mod pallet {
 				None => Err({}),
 			}
 		}
+
+		fn derived_key(block_number: T::BlockNumber) -> Vec<u8> {
+			block_number.using_encoded(|encoded_bn| {
+				ONCHAIN_TX_KEY
+					.clone()
+					.into_iter()
+					.chain(b"/".into_iter())
+					.chain(encoded_bn)
+					.copied()
+					.collect::<Vec<u8>>()
+			})
+		}
+
+		fn save_kitty_to_indexing(kitty_id: T::KittyIndex) {
+			let key = Self::derived_key(frame_system::Module::<T>::block_number());
+			let data: IndexingData<T> = IndexingData(kitty_id);
+			offchain_index::set(&key, &data.encode());
+		}
+
+		fn send_signed_tx(kitty_id: T::KittyIndex, payload: u32) -> Result<(), &'static str> {
+			let signer = Signer::<T, T::AuthorityId>::all_accounts();
+			if !signer.can_sign() {
+				return Err(
+					"No local accounts available. Consider adding one via `author_insertKey` RPC.",
+				);
+			}
+
+			let results = signer.send_signed_transaction(|_account| Call::update_kitty {
+				kitty_id,
+				algebra: payload,
+			});
+
+			for (acc, res) in &results {
+				match res {
+					Ok(()) => log::info!("[{:?}] Submitted data:{:?}", acc.id, (kitty_id, payload)),
+					Err(e) => log::error!("[{:?}] Failed to submit transaction: {:?}", acc.id, e),
+				}
+			}
+
+			Ok(())
+		}
+
 	}
 }
 
