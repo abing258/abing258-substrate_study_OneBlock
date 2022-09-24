@@ -32,7 +32,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 }
 
 pub(crate) type FullClient =
-	sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
+sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
@@ -87,6 +87,15 @@ pub fn new_partial(
 			executor,
 		)?;
 	let client = Arc::new(client);
+
+	if config.offchain_worker.enabled {
+		let keystore = keystore_container.sync_keystore();
+		sp_keystore::SyncCryptoStore::sr25519_generate_new(
+			&*keystore,
+			node_template_runtime::pallet_kitties::KEY_TYPE,
+			Some("//Alice"),
+		).expect("Creating key with account Alice should succeed.");
+	}
 
 	let telemetry = telemetry.map(|(worker, telemetry)| {
 		task_manager.spawn_handle().spawn("telemetry", None, worker.run());
@@ -296,24 +305,24 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			.spawn_blocking("aura", Some("block-authoring"), aura);
 	}
 
-	// if the node isn't actively participating in consensus then it doesn't
-	// need a keystore, regardless of which protocol we use below.
-	let keystore =
-		if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
-
-	let grandpa_config = sc_finality_grandpa::Config {
-		// FIXME #1578 make this available through chainspec
-		gossip_duration: Duration::from_millis(333),
-		justification_period: 512,
-		name: Some(name),
-		observer_enabled: false,
-		keystore,
-		local_role: role,
-		telemetry: telemetry.as_ref().map(|x| x.handle()),
-		protocol_name: grandpa_protocol_name,
-	};
-
 	if enable_grandpa {
+		// if the node isn't actively participating in consensus then it doesn't
+		// need a keystore, regardless of which protocol we use below.
+		let keystore =
+			if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
+
+		let grandpa_config = sc_finality_grandpa::Config {
+			// FIXME #1578 make this available through chainspec
+			gossip_duration: Duration::from_millis(333),
+			justification_period: 512,
+			name: Some(name),
+			observer_enabled: false,
+			keystore,
+			local_role: role,
+			telemetry: telemetry.as_ref().map(|x| x.handle()),
+			protocol_name: grandpa_protocol_name,
+		};
+
 		// start the full GRANDPA voter
 		// NOTE: non-authorities could run the GRANDPA observer protocol, but at
 		// this point the full voter should provide better guarantees of block

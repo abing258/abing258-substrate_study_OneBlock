@@ -28,16 +28,16 @@ pub mod crypto {
 
 	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for KittiesAuthId {
 		type RuntimeAppPublic = Public;
-		type GenericPublic = sr25519::Public;
 		type GenericSignature = sr25519::Signature;
+		type GenericPublic = sr25519::Public;
 	}
 
 	impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature>
 	for KittiesAuthId
 	{
 		type RuntimeAppPublic = Public;
-		type GenericPublic = sr25519::Public;
 		type GenericSignature = sr25519::Signature;
+		type GenericPublic = sr25519::Public;
 	}
 }
 
@@ -53,7 +53,6 @@ pub mod pallet {
 	use sp_runtime::offchain::storage::StorageValueRef;
 	use sp_runtime::traits::Zero;
 	use sp_runtime::traits::{AtLeast32Bit, Bounded, CheckedAdd};
-	use sp_runtime::transaction_validity::InvalidTransaction::{Call as OtherCall, Call};
 
 
 	#[pallet::type_value]
@@ -148,7 +147,7 @@ pub mod pallet {
 		InvalidKittyId,
 	}
 
-	const ONCHAIN_TX_KEY: &[u8] = b"kitty_pallet::indexing01";
+	const UNCHAIN_TX_KEY: &[u8] = b"kitty_pallet::indexing";
 	#[derive(Debug, Encode, Decode, Default)]
 	struct IndexingData<T: Config>(T::KittyIndex);
 
@@ -157,6 +156,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
 			let key = Self::derived_key(block_number);
+			log::info!("kitty_id block_number :{:?}, key is {:?}", block_number, key);
 			let storage_ref = StorageValueRef::persistent(&key);
 
 			if let Ok(Some(data)) = storage_ref.get::<IndexingData<T>>() {
@@ -166,11 +166,11 @@ pub mod pallet {
 				sp_io::offchain::sleep_until(timeout);
 
 				let kitty_id = data.0.into();
-
+				log::info!("kitty_id :{:?}", kitty_id);
 				if block_number % 2u32.into() != Zero::zero() {
-					let _ = Self::send_signed_tx(kitty_id, 1);
-				} else {
 					let _ = Self::send_signed_tx(kitty_id, 2);
+				} else {
+					let _ = Self::send_signed_tx(kitty_id, 3);
 				}
 			}
 		}
@@ -190,7 +190,7 @@ pub mod pallet {
 
 			let kitty_id = Self::get_next_id().map_err(|_| Error::<T>::KittyIdOverflow)?;
 			let random = Self::random_value(&sender);
-			let kitty = Kitty{ dna: random, algebra: 01 };
+			let kitty = Kitty{ dna: random, algebra: 1 };
 
 			T::Currency::reserve(&sender, kitty_price)?;
 
@@ -206,7 +206,7 @@ pub mod pallet {
 				kitties.try_push(kitty_id).map_err(|_| Error::<T>::OwnTooManyKitties)?;
 				Ok::<(), DispatchError>(())
 			})?;
-
+			Self::save_kitty_to_indexing(kitty_id);
 			// 发送一个成功的事件
 			Self::deposit_event(Event::KittyCreated(sender, kitty_id, kitty));
 			Ok({})
@@ -233,7 +233,7 @@ pub mod pallet {
 				kitty_data[i] = (kitty_one.dna[i] & random[i]) | (kitty_two.dna[i] & !random[i]);
 			}
 
-			let kitty = Kitty{ dna: kitty_data, algebra: 01 };
+			let kitty = Kitty{ dna: kitty_data, algebra: 1 };
 
 			T::Currency::reserve(&sender, kitty_price)?;
 
@@ -255,7 +255,7 @@ pub mod pallet {
 				kitties.try_push(kitty_id).map_err(|_| Error::<T>::OwnTooManyKitties)?;
 				Ok::<(), DispatchError>(())
 			})?;
-
+			Self::save_kitty_to_indexing(kitty_id);
 			// 发送一个成功的事件
 			Self::deposit_event(Event::KittyBreed(sender, kitty_id, kitty));
 			Ok({})
@@ -335,7 +335,7 @@ pub mod pallet {
 
 		fn derived_key(block_number: T::BlockNumber) -> Vec<u8> {
 			block_number.using_encoded(|encoded_bn| {
-				ONCHAIN_TX_KEY
+				UNCHAIN_TX_KEY
 					.clone()
 					.into_iter()
 					.chain(b"/".into_iter())
@@ -346,8 +346,10 @@ pub mod pallet {
 		}
 
 		fn save_kitty_to_indexing(kitty_id: T::KittyIndex) {
-			let key = Self::derived_key(frame_system::Module::<T>::block_number());
+			let block_number = frame_system::Module::<T>::block_number();
+			let key = Self::derived_key(block_number);
 			let data: IndexingData<T> = IndexingData(kitty_id);
+			log::info!("在块高[{:?}] 以key {:?} Submitted kitty_id:{:?}", block_number, key,  kitty_id);
 			offchain_index::set(&key, &data.encode());
 		}
 
