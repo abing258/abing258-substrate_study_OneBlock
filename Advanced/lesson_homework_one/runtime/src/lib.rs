@@ -311,7 +311,7 @@ impl frame_system::offchain::SigningTypes for Runtime {
 	type Public = <Signature as sp_runtime::traits::Verify>::Signer;
 	type Signature = Signature;
 }
-
+/// 不签名交易只用加这一个
 impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
 	where
 		Call: From<C>,

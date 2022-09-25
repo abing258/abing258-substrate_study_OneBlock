@@ -33,6 +33,9 @@ pub mod pallet {
 	//use frame_support::inherent::Vec;
 	use sp_runtime::traits::Zero;
 	use sp_std::vec::Vec;
+	use core::{convert::TryInto, fmt};
+	use frame_support::sp_std;
+	use frame_system::offchain::SubmitTransaction;
 
 	#[derive(Deserialize, Encode, Decode)]
 	struct GithubInfo {
@@ -51,8 +54,7 @@ pub mod pallet {
 		Ok(s.as_bytes().to_vec())
 	}
 
-	use core::{convert::TryInto, fmt};
-	use frame_support::sp_std;
+
 
 	impl fmt::Debug for GithubInfo {
 		fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -69,10 +71,11 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + frame_system::offchain::SendTransactionTypes<Call<Self>>{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
+
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -145,6 +148,16 @@ pub mod pallet {
 					Ok(())
 				},
 			}
+		}
+
+		#[pallet::weight(0)]
+		pub fn submit_data_unsigned(origin: OriginFor<T>, n: u64) -> DispatchResult {
+			ensure_none(origin)?;
+
+			log::info!("in submit_data_unsigned: {:?}", n);
+
+			// Return a successful DispatchResultWithPostInfo
+			Ok(())
 		}
 	}
 
@@ -219,7 +232,13 @@ pub mod pallet {
 
 			}
 
-
+			// 发送不签名交易
+			let value: u64 = 42;
+			let call = Call::submit_data_unsigned { n: value };
+			_ = SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into())
+				.map_err(|_| {
+					log::error!("Failed in offchain_unsigned_tx");
+				}).expect("TODO: panic message");
 
 			log::info!("Leave from offchain workers!: {:?}", block_number);
 		}
@@ -238,6 +257,26 @@ pub mod pallet {
 			0
 		}
 
+	}
+
+	/// 校验未签名的交易
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			if let Call::submit_data_unsigned { n: _ } = call {
+				//let provide = b"submit_xxx_unsigned".to_vec();
+				ValidTransaction::with_tag_prefix("ExampleOffchainWorker")
+					.priority(10000)
+					.and_provides(1)
+					.longevity(3)
+					.propagate(true)
+					.build()
+			} else {
+				InvalidTransaction::Call.into()
+			}
+		}
 	}
 
 

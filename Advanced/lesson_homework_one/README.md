@@ -37,8 +37,12 @@
 ![](./images/lesson_homework_three/img.png)
 
 
-# lesson_homework_two（基于 polkadot-v0.9.25）
+# lesson_homework_four（基于 polkadot-v0.9.25）
 第四课的代码是在[lesson_homework_four](./pallets/kitties)
+启动命令：
+```bash
+cargo run --release -- --dev --enable-offchain-indexing true
+```
 
 实现功能:
 
@@ -52,8 +56,9 @@
 1. 链上随机数([Randomness Module](https://docs.rs/pallet-randomness-collective-flip/3.0.0/pallet_randomness_collective_flip/))是根据当前结点的之前81个block的哈希生成的，由于链上系统无法实现真正的不可预测的熵来保证生成的随机数的随机性，所以链上随机数pallet只推荐在test时使用。
 2. 链下随机数([Offchain Random](https://docs.rs/sp-io/6.0.0/sp_io/offchain/fn.random_seed.html))由于是在链下执行，本着链下数据不可信的原则，可以使用当前结点系统关联生成不可预测的熵，以确保生成数的随机性。
 
-场景：创建和孵化kitty的时候向链下索引存储数据，链下工作机8秒后根据块高的奇偶数对数据进行修改
-问题，offchain-work中获取不到之前的数据
+场景：创建和孵化kitty的时候向链下索引存储数据，链下工作机8秒后根据块高的奇偶数对数据进行修改  
+![runtime创建](./images/lesson_homework_four/kitty_creat_0.png)  
+![offchain更改](./images/lesson_homework_four/kitty_off_chain_3.png)  
 
 
 
