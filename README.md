@@ -59,4 +59,16 @@
 1. 链上随机数([Randomness Module](https://docs.rs/pallet-randomness-collective-flip/3.0.0/pallet_randomness_collective_flip/))是根据当前结点的之前81个block的哈希生成的，由于链上系统无法实现真正的不可预测的熵来保证生成的随机数的随机性，所以链上随机数pallet只推荐在test时使用。
 2. 链下随机数([Offchain Random](https://docs.rs/sp-io/6.0.0/sp_io/offchain/fn.random_seed.html))由于是在链下执行，本着链下数据不可信的原则，可以使用当前结点系统关联生成不可预测的熵，以确保生成数的随机性。
 
-场景：创建和孵化kitty的时候向链下索引存储数据，链下工作机8秒后根据块高的奇偶数对数据进行修改  
+场景：创建和孵化kitty的时候向链下索引存储数据，链下工作机8秒后根据块高的奇偶数对数据进行修改   
+
+[lesson_homework_three_five](./Advanced/lesson_homework_five/erc20) 作业五   
+
+实现功能：
+
+    * erc20的智能合约
+    * 转移代币
+    * 创建事件
+    * 添加审批逻辑
+    * 添加从逻辑转移
+    * 编写测试用例
+![图片](./Advanced/lesson_homework_five/images/img.png)

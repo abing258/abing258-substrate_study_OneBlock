@@ -8,8 +8,15 @@
     * 添加审批逻辑
     * 添加从逻辑转移
     * 编写测试用例
-![图片](./images/lesson_homework_one/img.png)
+![图片](./images/img.png)
 
-问题:
+使用的版本：
+```bash
+cargo 1.64.0 (387270bc7 2022-09-16)
 
-    大锤老师在5-3课程中说的ink合约的存储暂时不支持更新和新增？怎么理解，目前数据不是可以更新的吗
+cargo-contract 2.0.0-alpha.3-unknown-aarch64-apple-darwin
+
+cargo contract build
+
+```
+运行环境：substrate-contracts-node v0.20.0

@@ -1,13 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use ink_lang as ink;
-
 #[ink::contract]
 mod erc20 {
-    use ink_primitives::AccountId;
-    use crate::AccountId;
     use ink::storage::Mapping;
-
 
     /// Specify ERC-20 error type.
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -57,11 +52,22 @@ mod erc20 {
     impl Erc20 {
         /// Create a new ERC-20 contract with an initial supply.
         #[ink(constructor)]
-        pub fn new(initial_supply: Balance) -> Self {
-            // Initialize mapping for the contract.
-            ink_lang::utils::initialize_contract(|contract| {
-                Self::new_init(contract, initial_supply)
-            })
+        pub fn new(total_supply: Balance) -> Self {
+            let mut balances = Mapping::default();
+            let caller = Self::env().caller();
+            balances.insert(&caller, &total_supply);
+            Self::env().emit_event(Transfer {
+                from: None,
+                to: Some(caller),
+                value: total_supply,
+            });
+            //可以直接把日志输出到节点的日志上去
+            ink_env::debug_println!("erc2.0 contract AccountId：{:?} | balances: {:?}", caller, balances);
+            Self {
+                total_supply,
+                balances,
+                allowances: Default::default(),
+            }
         }
 
         /// Initialize the ERC-20 contract with the specified initial supply.
@@ -74,8 +80,7 @@ mod erc20 {
                 to: Some(caller),
                 value: initial_supply,
             });
-            //可以直接把日志输出到节点的日志上去
-            ink_env::debug_println!("erc2.0 contract AccountId：{:?} | balances: {:?}", caller, self.balances)
+
         }
 
         /// Returns the total token supply.
