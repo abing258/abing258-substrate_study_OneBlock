@@ -1,7 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_system::weights;
 /// a module for proof of existence
 pub use pallet::*;
+pub use weight::WeightInfo;
 
 #[cfg(test)]
 mod mock;
@@ -9,11 +11,17 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+pub mod weight;
+
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
-	use sp_std::vec::Vec;
+	pub use frame_support::pallet_prelude::*;
+	pub use frame_system::pallet_prelude::*;
+	pub use sp_std::prelude::*;
+	use super::WeightInfo;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	/// 模块配置接口
@@ -27,6 +35,9 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		// 把runtime定义的系统的类型设置在当前模块，满足的条件，可以从当前模块转移过去，同时是系统模块的Event类型
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		///设置权重值
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -74,7 +85,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(100)]
+		#[pallet::weight(T::WeightInfo::create_claim(claim.len() as u32))]
 		/// 创建存证可调用函数  origin表示发送方 claim存证的hash值
 		pub fn create_claim(
 			origin: OriginFor<T>,
@@ -97,7 +108,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::revoke_claim(claim.len() as u32))]
 		pub fn revoke_claim(
 			origin: OriginFor<T>,
 			claim: Vec<u8>
@@ -113,7 +124,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::transfer_claim(claim.len() as u32))]
 		pub fn transfer_claim(origin: OriginFor<T>, claim: Vec<u8>, dest: T::AccountId) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			// 校验claim长度

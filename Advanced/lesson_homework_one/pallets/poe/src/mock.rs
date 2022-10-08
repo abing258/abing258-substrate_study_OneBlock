@@ -52,6 +52,7 @@ impl system::Config for Test {
 impl pallet_poe::Config for Test {
 	type MaxClaimLength = ConstU32<512>;
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime. 可以对区块的初始方法进行配置

@@ -330,6 +330,7 @@ impl pallet_poe::Config for Runtime {
 	// 因为BoundedVec 最大长度是512
 	type MaxClaimLength = ConstU32<512>;
 	type Event = Event;
+	type WeightInfo = pallet_poe::weight::SubstrateWeight<Runtime>;
 }
 
 impl pallet_kitties::Config for Runtime {
@@ -409,6 +410,7 @@ mod benches {
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
 		[pallet_template, TemplateModule]
+		[pallet_poe, PoeModule]
 	);
 }
 

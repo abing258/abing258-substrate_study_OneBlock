@@ -61,6 +61,13 @@ cargo run --release -- --dev --enable-offchain-indexing true
 ![offchain更改](./images/lesson_homework_four/kitty_off_chain_3.png)  
 
 
+# lesson_homework_six（基于 polkadot-v0.9.25）
+第六课的代码是在[lesson_homework_six](./pallets/poe/src/benchmarking.rs)    
+实现功能:
+
+    基准测试
+
+
 
 # Substrate Node Template
 
