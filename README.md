@@ -46,7 +46,7 @@
     1. Kitty的单元测试。
     2. 前端页面的交互
 
-[lesson_homework_three_four](./Advanced/lesson_homework_one/pallets/kitties) 作业四   
+[lesson_homework_four](./Advanced/lesson_homework_one/pallets/kitties) 作业四   
 实现功能:
 
     1. 在 Offchain Worker 中，使用 Offchain Indexing 特性实现从链上向 Offchain Storage 中写入数据。
@@ -61,7 +61,7 @@
 
 场景：创建和孵化kitty的时候向链下索引存储数据，链下工作机8秒后根据块高的奇偶数对数据进行修改   
 
-[lesson_homework_three_five](./Advanced/lesson_homework_five/erc20) 作业五   
+[lesson_homework_five](./Advanced/lesson_homework_five/erc20) 作业五   
 
 实现功能：
 
@@ -72,3 +72,16 @@
     * 添加从逻辑转移
     * 编写测试用例
 ![图片](./Advanced/lesson_homework_five/images/img.png)
+
+[lesson_homework_six.1](./Advanced/lesson_homework_one/pallets/poe/src) 作业六(1)
+
+实现功能：
+
+    * 为 proof of existence (poe) 模块的可调用函数 create_claim, revoke_claim, transfer_claim 添加 benchmark 用例，并且将 benchmark 运行的结果应用在可调用函数上
+
+[lesson_homework_six.2](./Advanced/lesson_homework_six) 作业六(2)
+
+实现功能：
+
+    * 选择 node-template 或者其它节点程序，生成 Chain Spec 文件（两种格式都需要）
+    * （附加题）根据 Chain Spec，部署公开测试网络
